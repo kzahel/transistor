@@ -20,12 +20,12 @@ Nobody covers all platforms with a real JS runtime and native I/O primitives. Ca
 
 ## The Insight
 
-The native binding surface needed is surprisingly small. Web APIs already cover rendering, layout, input, audio, video, crypto, workers, storage. The two things the web platform can't do are:
+The native binding surface for a useful MVP is surprisingly small. Web APIs already cover rendering, layout, input, audio, video, crypto, workers, storage. There's a long tail of native capabilities the web can't touch (GPU compute, USB/Bluetooth devices, hardware sensors, background execution, etc.), but the two most common gaps are:
 
 1. **Raw sockets** (TCP/UDP)
 2. **Real filesystem access**
 
-That's it. Every "native app" use case that the web can't handle comes down to sockets, files, or both:
+A large class of "native app" use cases that the web can't handle come down to sockets, files, or both:
 
 - Torrent client → sockets + files
 - Web server → sockets + files
