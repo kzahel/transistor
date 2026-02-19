@@ -134,6 +134,40 @@ No programmatic Gradle/Xcode project generation. Just good templates. Same appro
 - Hot reload across platforms
 - Framework upgrade mechanism (template regeneration)
 
+## Runtime Framework, Not Webview Framework
+
+Transistor is fundamentally different from Electrobun, Capacitor, and Electron in one important way: it is a **runtime framework**, not a webview framework. The core deliverable is a JS engine with native I/O bindings. How (or whether) you present UI is your choice.
+
+### Three modes of operation
+
+1. **Headless**: JS engine running TypeScript logic with no UI at all. Daemons, CLI tools, background services, servers. This is the primary mode — the engine stands alone.
+2. **Webview UI**: Same engine + a webview for web-based UI. Like Electrobun/Tauri. Works well on desktop where webview latency is negligible (in-process compositing). On Android, webview runs in a separate process with added input latency — fine for utility apps, not ideal for games.
+3. **Native UI**: Same engine + platform-native UI (Jetpack Compose on Android, SwiftUI on iOS). JSTorrent already does this — the Android app has a full native Compose UI driven by the QuickJS engine. No webview involved.
+
+This matters because existing frameworks force you into one UI model. Capacitor and Electrobun are webview-or-nothing. React Native is native-UI-or-nothing. Transistor doesn't care — the engine is the product, the UI is pluggable.
+
+A web server needs no UI. A torrent client might want native UI on mobile and webview on desktop. A game might want a native Canvas surface. The framework provides the engine and I/O; the developer picks the presentation layer.
+
+## Games & Native Rendering
+
+Game devs are already experimenting with Electrobun for desktop games (Steam indie titles). TypeScript game engines with `bun --watch` for instant hot reload is a compelling dev experience.
+
+For games, a potential third binding surface beyond files and sockets is **native canvas/rendering**:
+
+- **Desktop**: Webview Canvas/WebGL is fine — no meaningful latency penalty since the webview is in-process.
+- **Android**: Webview adds a frame of input latency due to cross-process compositing. For casual/turn-based games this is acceptable. For action games, the engine could instead drive a native `SurfaceView` through JNI bindings, bypassing the webview entirely. The QuickJS engine is already in-process, so it has direct access to the Android graphics stack.
+- **iOS**: Similar tradeoff — `WKWebView` Canvas works for casual games, but JSC could drive a `CAMetalLayer` or `MTKView` directly for lower latency.
+
+Critically, this doesn't mean building a rendering engine. The JS ecosystem already has great ones — Three.js, PixiJS, Babylon.js. These libraries are just WebGL calls under the hood. They don't need a browser; they need an OpenGL/Metal/Vulkan surface and a GL context. The native canvas binding would expose a hardware surface + GL context through JNI/Swift/FFI, and existing WebGL libraries render to it directly. Projects like headless-gl already prove WebGL-without-a-browser works in Node.
+
+This is explicitly **not MVP scope** — files and sockets are enough to ship useful apps. But a native canvas API could be a compelling future addition that turns Transistor into a viable cross-platform game runtime. The architecture supports it cleanly because the JS engine is already in-process on every platform.
+
+### Binding surface progression
+
+1. **MVP**: Files + Sockets (~15 functions) — covers servers, P2P apps, dev tools
+2. **v2**: Native Canvas/GPU surface — covers games, data visualization
+3. **Future**: Camera, sensors, Bluetooth, etc. — covers mobile-specific apps
+
 ## Name
 
 **Transistor** — three terminals (desktop, Android, iOS), amplifies what JavaScript can do, electronics lineage with Capacitor/Electron. Short, brandable, easy to search.
